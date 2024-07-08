@@ -14,7 +14,6 @@ from torch import (
     empty,
     empty_like,
     erf,
-    eye,
     flatten,
     float32,
     float64,
@@ -322,10 +321,14 @@ def sum(x, axis=None, keepdims=None, dtype=None):
 
 
 def einsum(equation, *inputs):
-    input_tensors_list = [arg if is_array(arg) else array(arg) for arg in inputs]
+    input_tensors_list = [arg if isinstance(arg, get_default_dtype()) else array(arg) for arg in inputs]
     input_tensors_list = convert_to_wider_dtype(input_tensors_list)
 
     return _torch.einsum(equation, *input_tensors_list)
+
+
+def eye(*args, **kwargs):
+    return array(_torch.eye(*args, **kwargs))
 
 
 def transpose(x, axes=None):
@@ -469,8 +472,8 @@ def set_diag(x, new_diag):
     1-D array, but modifies x instead of creating a copy.
     """
     arr_shape = x.shape
-    off_diag = (1 - _torch.eye(arr_shape[-1])) * x
-    diag = _torch.einsum("ij,...i->...ij", _torch.eye(new_diag.shape[-1]), new_diag)
+    off_diag = (1 - eye(arr_shape[-1])) * x
+    diag = _torch.einsum("ij,...i->...ij", eye(new_diag.shape[-1]), new_diag)
     return diag + off_diag
 
 
@@ -487,9 +490,11 @@ def where(condition, x=None, y=None):
     if x is None and y is None:
         return _torch.where(condition)
     if not _torch.is_tensor(x):
-        x = _torch.tensor(x)
+        x = x if isinstance(x, _Iterable) else [x]
+        x = get_default_dtype()(x)
     if not _torch.is_tensor(y):
-        y = _torch.tensor(y)
+        y = y if isinstance(y, _Iterable) else [y]
+        y = get_default_dtype()(y)
     y = cast(y, x.dtype)
     return _torch.where(condition, x, y)
 

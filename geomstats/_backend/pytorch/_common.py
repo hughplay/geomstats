@@ -1,5 +1,6 @@
 import numpy as _np
 import torch as _torch
+from ._dtype import get_default_dtype
 
 
 def from_numpy(x):
@@ -9,7 +10,7 @@ def from_numpy(x):
 def array(val, dtype=None):
     if _torch.is_tensor(val):
         if dtype is None or val.dtype == dtype:
-            return val.clone()
+            return get_default_dtype()(val.tolist())
 
         return cast(val, dtype=dtype)
 
